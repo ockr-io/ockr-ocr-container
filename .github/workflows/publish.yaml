@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
           repository: fabianbormann/${{ env.DOCKER_IMAGE_NAME }}
-          short-description: The Ockr OCR container offers a FastAPI service that can be used to extract information from documents
+          short-description: The Ockr OCR container offers a FastAPI service for extracting text information from images
 
       - name: Build and Push docker image
         uses: docker/build-push-action@v3
