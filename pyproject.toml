@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "ockr-ocr-container"
+version = "0.1.0"
+description = "The Ockr OCR container offers a service that can be used to extract information from documents"
+authors = ["Fabian Bormann <fabian.bormann@ockr.io>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "ockr_ocr_container"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.104.1"
+uvicorn = {extras = ["standard"], version = "^0.24.0.post1"}
+python-dotenv = "^1.0.0"
+requests = "^2.31.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
