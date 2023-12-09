@@ -1,4 +1,4 @@
-FROM python:3.9-slim
+FROM python:3.11-slim
 
 ENV PORT=5001
 ENV OCKR_API_URL=http://localhost:8080/api/v1/
