@@ -1,12 +1,13 @@
 import os
 import uvicorn
-from typing import Union
 from fastapi import FastAPI, Response
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 import socket
 import requests
 import logging
+import cv2
+from inference import ocr
 
 load_dotenv()
 logging.basicConfig(filename='ockr-ocr-app.log', format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
@@ -29,7 +30,7 @@ async def lifespan(app: FastAPI):
         yield
         if registered:
             try:
-                requests.post(OCKR_API_URL + "deregister", json={"name": "ockr-ocr-model", "url": url, port: str(OCKR_CONTAINER_PORT)})
+                requests.post(OCKR_API_URL + "deregister", json={"name": "ockr-ocr-model", "url": url, "port": str(OCKR_CONTAINER_PORT)})
             except:
                 logging.error("De-registration failed")
         else:
@@ -43,8 +44,11 @@ def health():
 
 @app.post("/inference")
 def inference(response: Response):
-    response.status_code = 501
-    return "Not implemented"
+    image = cv2.imread('test/resources/ockr-specification-abstract-crop.png')
+    result = ocr(image, 'PP-OCRv3')
+
+    response.status_code = 200
+    return result
 
 if __name__ == "__main__":
     uvicorn.run("__main__:app", host="0.0.0.0", port=int(OCKR_CONTAINER_PORT), reload=True)

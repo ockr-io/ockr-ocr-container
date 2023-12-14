@@ -8,11 +8,16 @@ readme = "README.md"
 packages = [{include = "ockr_ocr_container"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.9.0"
 fastapi = "^0.104.1"
 uvicorn = {extras = ["standard"], version = "^0.24.0.post1"}
 python-dotenv = "^1.0.0"
 requests = "^2.31.0"
+opencv-python = "^4.8.1.78"
+pyclipper = "^1.3.0.post5"
+shapely = "^2.0.2"
+onnxruntime = "^1.16.3"
+onnx = "1.15.0"
 
 [build-system]
 requires = ["poetry-core"]
