@@ -8,6 +8,7 @@ def resize_image(image, target_size=[512, 1024]):
     image = cv2.resize(image, (int(target_size[1]), int(target_size[0])))
     return image, [height, width, *ratio]
 
+
 def normalize_image(image):
     mean = np.array([0.485, 0.456, 0.406]).reshape((3, 1, 1))
     std = np.array([0.229, 0.224, 0.225]).reshape((3, 1, 1))

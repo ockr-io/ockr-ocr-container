@@ -17,11 +17,13 @@ def order_points_clockwise(pts):
     rect[3] = tmp[np.argmax(diff)]
     return rect
 
+
 def clip_det_res(points, img_height, img_width):
     for pno in range(points.shape[0]):
         points[pno, 0] = int(min(max(points[pno, 0], 0), img_width - 1))
         points[pno, 1] = int(min(max(points[pno, 1], 0), img_height - 1))
     return points
+
 
 def filter_tag_det_res(dt_boxes, image_shape):
     img_height, img_width = image_shape[0:2]
@@ -38,6 +40,7 @@ def filter_tag_det_res(dt_boxes, image_shape):
         dt_boxes_new.append(box)
     dt_boxes = np.array(dt_boxes_new)
     return dt_boxes
+
 
 def get_mini_boxes(contour):
     bounding_box = cv2.minAreaRect(contour)
@@ -62,6 +65,7 @@ def get_mini_boxes(contour):
     ]
     return box, min(bounding_box[1])
 
+
 def box_score_fast(bitmap, _box):
     h, w = bitmap.shape[:2]
     box = _box.copy()
@@ -76,6 +80,7 @@ def box_score_fast(bitmap, _box):
     cv2.fillPoly(mask, box.reshape(1, -1, 2).astype("int32"), 1)
     return cv2.mean(bitmap[ymin:ymax + 1, xmin:xmax + 1], mask)[0]
 
+
 def unclip(box, unclip_ratio):
     poly = Polygon(box)
     distance = poly.area * unclip_ratio / poly.length
@@ -86,10 +91,10 @@ def unclip(box, unclip_ratio):
 
 
 def boxes_from_bitmap(pred, _bitmap, dest_width, dest_height):
-    max_candidates=1000
+    max_candidates = 1000
     min_size = 3
-    box_thresh=0.6
-    unclip_ratio=1.5
+    box_thresh = 0.6
+    unclip_ratio = 1.5
     bitmap = _bitmap
     height, width = bitmap.shape
 
@@ -111,7 +116,7 @@ def boxes_from_bitmap(pred, _bitmap, dest_width, dest_height):
             continue
         points = np.array(points)
         score = box_score_fast(pred, points.reshape(-1, 2))
-        
+
         if box_thresh > score:
             continue
 
@@ -129,6 +134,7 @@ def boxes_from_bitmap(pred, _bitmap, dest_width, dest_height):
         scores.append(score)
     return np.array(boxes, dtype="int32"), scores
 
+
 def postProcess(outs_dict, shape_list, thresh=0.3):
     pred = outs_dict['maps']
     pred = pred[:, 0, :, :]
@@ -138,9 +144,11 @@ def postProcess(outs_dict, shape_list, thresh=0.3):
     for batch_index in range(pred.shape[0]):
         src_h, src_w, ratio_h, ratio_w = shape_list[batch_index]
         mask = segmentation[batch_index]
-        boxes, scores = boxes_from_bitmap(pred[batch_index], mask, src_w, src_h)
+        boxes, scores = boxes_from_bitmap(
+            pred[batch_index], mask, src_w, src_h)
         boxes_batch.append({'points': boxes})
     return boxes_batch
+
 
 def sorted_boxes(dt_boxes):
     num_boxes = dt_boxes.shape[0]
@@ -158,11 +166,12 @@ def sorted_boxes(dt_boxes):
                 break
     return _boxes
 
+
 def resize_norm_img(img, max_wh_ratio):
     imgC, imgH, imgW = [3, 48, 320]
     assert imgC == img.shape[2]
     imgW = int((imgH * max_wh_ratio))
-    
+
     w = 1024
     if w is not None and w > 0:
         imgW = w
@@ -173,7 +182,7 @@ def resize_norm_img(img, max_wh_ratio):
         resized_w = imgW
     else:
         resized_w = int(math.ceil(imgH * ratio))
-    
+
     resized_image = cv2.resize(img, (resized_w, imgH))
     resized_image = resized_image.astype('float32')
     resized_image = resized_image.transpose((2, 0, 1)) / 255
@@ -182,6 +191,7 @@ def resize_norm_img(img, max_wh_ratio):
     padding_im = np.zeros((imgC, imgH, imgW), dtype=np.float32)
     padding_im[:, :, 0:resized_w] = resized_image
     return padding_im
+
 
 def get_rotate_crop_image(img, points):
     assert len(points) == 4, "shape of points must be 4*2"
@@ -206,6 +216,7 @@ def get_rotate_crop_image(img, points):
     if dst_img_height * 1.0 / dst_img_width >= 1.5:
         dst_img = np.rot90(dst_img)
     return dst_img
+
 
 class LabelDecoder():
     def __init__(self, use_space_char=False):
@@ -238,7 +249,7 @@ class LabelDecoder():
         word_list = []
         word_col_list = []
         state_list = []
-        valid_col = np.where(selection==True)[0]
+        valid_col = np.where(selection == True)[0]
 
         for c_i, char in enumerate(text):
             if '\u4e00' <= char <= '\u9fff':
@@ -247,12 +258,13 @@ class LabelDecoder():
                 c_state = 'en&num'
             else:
                 c_state = 'splitter'
-            
-            if char == '.' and state == 'en&num' and c_i + 1 < len(text) and bool(re.search('[0-9]', text[c_i+1])): # grouping floting number
+
+            # grouping floting number
+            if char == '.' and state == 'en&num' and c_i + 1 < len(text) and bool(re.search('[0-9]', text[c_i+1])):
                 c_state = 'en&num'
-            if char == '-' and state == "en&num": # grouping word with '-', such as 'state-of-the-art'
+            if char == '-' and state == "en&num":  # grouping word with '-', such as 'state-of-the-art'
                 c_state = 'en&num'
-            
+
             if state == None:
                 state = c_state
 
@@ -269,7 +281,7 @@ class LabelDecoder():
                 word_content.append(char)
                 word_col_content.append(valid_col[c_i])
 
-        if len(word_content) != 0: 
+        if len(word_content) != 0:
             word_list.append(word_content)
             word_col_list.append(word_col_content)
             state_list.append(state)
@@ -291,7 +303,7 @@ class LabelDecoder():
                     batch_idx][:-1]
             for ignored_token in ignored_tokens:
                 selection &= text_index[batch_idx] != ignored_token
-    
+
             char_list = [
                 self.character[text_id]
                 for text_id in text_index[batch_idx][selection]
@@ -302,15 +314,17 @@ class LabelDecoder():
                 conf_list = [1] * len(selection)
             if len(conf_list) == 0:
                 conf_list = [0]
-    
+
             text = ''.join(char_list)
-    
+
             if self.reverse:  # for arabic rec
                 text = self.pred_reverse(text)
-            
+
             if return_word_box:
-                word_list, word_col_list, state_list = self.get_word_info(text, selection)
-                result_list.append((text, np.mean(conf_list).tolist(), [len(text_index[batch_idx]), word_list, word_col_list, state_list]))
+                word_list, word_col_list, state_list = self.get_word_info(
+                    text, selection)
+                result_list.append((text, np.mean(conf_list).tolist(), [len(
+                    text_index[batch_idx]), word_list, word_col_list, state_list]))
             else:
                 result_list.append((text, np.mean(conf_list).tolist()))
         return result_list
@@ -318,14 +332,14 @@ class LabelDecoder():
     def __call__(self, preds, label=None, return_word_box=False, *args, **kwargs):
         if isinstance(preds, tuple) or isinstance(preds, list):
             preds = preds[-1]
-    
+
         preds_idx = preds.argmax(axis=2)
         preds_prob = preds.max(axis=2)
-        text = self.decode(preds_idx, preds_prob, is_remove_duplicate=True, return_word_box=False)
+        text = self.decode(preds_idx, preds_prob,
+                           is_remove_duplicate=True, return_word_box=False)
         if return_word_box:
             for rec_idx, rec in enumerate(text):
                 wh_ratio = kwargs['wh_ratio_list'][rec_idx]
                 max_wh_ratio = kwargs['max_wh_ratio']
                 rec[2][0] = rec[2][0]*(wh_ratio/max_wh_ratio)
         return text
-
