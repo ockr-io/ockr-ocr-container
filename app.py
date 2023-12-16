@@ -13,9 +13,10 @@ from pydantic import BaseModel
 
 
 class OcrRequest(BaseModel):
+    parameters: dict = {}
     base64_image: str
-    model_name: str = None
-    model_version: str = None
+    ocr_model_name: str = None
+    ocr_model_version: str = None
 
 
 load_dotenv()
@@ -62,19 +63,21 @@ def health():
 @app.post("/inference")
 def inference(request: OcrRequest):
     image = decode_base64(request.base64_image)
-    model_name = request.model_name
-    model_version = request.model_version
+    ocr_model_name = request.ocr_model_name
+    ocr_model_version = request.ocr_model_version
+    parameters = request.parameters
 
-    if (model_name == None):
-        model_name = 'PP-OCRv3'
+    if (ocr_model_name == None):
+        ocr_model_name = 'PP-OCRv3'
 
-    if (model_version == None):
-        model_version = 'latest'
+    if (ocr_model_version == None):
+        ocr_model_version = 'latest'
 
-    prediction, parameters = ocr(image, model_name, model_version)
+    prediction, parameters = ocr(
+        image, ocr_model_name, ocr_model_version, parameters)
     return {
-        "model_name": model_name,
-        "model_version": model_version,
+        "ocr_model_name": ocr_model_name,
+        "ocr_model_version": ocr_model_version,
         "parameters": parameters,
         "prediction": prediction
     }

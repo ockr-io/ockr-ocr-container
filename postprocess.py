@@ -104,7 +104,6 @@ def boxes_from_bitmap(pred, _bitmap, dest_width, dest_height, box_thresh=0.6, un
     num_contours = min(len(contours), max_candidates)
 
     boxes = []
-    scores = []
     for index in range(num_contours):
         contour = contours[index]
         points, sside = get_mini_boxes(contour)
@@ -127,20 +126,20 @@ def boxes_from_bitmap(pred, _bitmap, dest_width, dest_height, box_thresh=0.6, un
         box[:, 1] = np.clip(
             np.round(box[:, 1] / height * dest_height), 0, dest_height)
         boxes.append(box.astype("int32"))
-        scores.append(score)
-    return np.array(boxes, dtype="int32"), scores
+
+    return np.array(boxes, dtype="int32")
 
 
-def postProcess(outs_dict, shape_list, segmentation_threshold=0.3, detection_threshold=0.6, unclip_ratio=1.5, max_candidates=1000, min_size=3):
+def postProcess(outs_dict, shape_list, segmentation_threshold=0.3, detection_threshold=0.6, unclip_ratio=1.5, max_candidates=1000, min_size=3, **kwargs):
     pred = outs_dict['maps']
     pred = pred[:, 0, :, :]
     segmentation = pred > segmentation_threshold
 
     boxes_batch = []
     for batch_index in range(pred.shape[0]):
-        src_h, src_w, ratio_h, ratio_w = shape_list[batch_index]
+        src_h, src_w = shape_list[batch_index][:2]
         mask = segmentation[batch_index]
-        boxes, scores = boxes_from_bitmap(
+        boxes = boxes_from_bitmap(
             pred[batch_index], mask, src_w, src_h, detection_threshold, unclip_ratio, max_candidates, min_size)
         boxes_batch.append({'points': boxes})
 
@@ -152,7 +151,7 @@ def postProcess(outs_dict, shape_list, segmentation_threshold=0.3, detection_thr
         "min_size": min_size
     }
 
-    return boxes_batch, parameters
+    return boxes_batch, parameters | kwargs
 
 
 def sorted_boxes(dt_boxes):
@@ -224,7 +223,7 @@ def get_rotate_crop_image(img, points):
 
 
 class LabelDecoder():
-    def __init__(self, use_space_char=False):
+    def __init__(self, use_space_char=True):
         self.beg_str = "sos"
         self.end_str = "eos"
         self.reverse = False
