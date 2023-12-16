@@ -90,11 +90,7 @@ def unclip(box, unclip_ratio):
     return expanded
 
 
-def boxes_from_bitmap(pred, _bitmap, dest_width, dest_height):
-    max_candidates = 1000
-    min_size = 3
-    box_thresh = 0.6
-    unclip_ratio = 1.5
+def boxes_from_bitmap(pred, _bitmap, dest_width, dest_height, box_thresh=0.6, unclip_ratio=1.5, max_candidates=1000, min_size=3):
     bitmap = _bitmap
     height, width = bitmap.shape
 
@@ -135,19 +131,28 @@ def boxes_from_bitmap(pred, _bitmap, dest_width, dest_height):
     return np.array(boxes, dtype="int32"), scores
 
 
-def postProcess(outs_dict, shape_list, thresh=0.3):
+def postProcess(outs_dict, shape_list, segmentation_threshold=0.3, detection_threshold=0.6, unclip_ratio=1.5, max_candidates=1000, min_size=3):
     pred = outs_dict['maps']
     pred = pred[:, 0, :, :]
-    segmentation = pred > thresh
+    segmentation = pred > segmentation_threshold
 
     boxes_batch = []
     for batch_index in range(pred.shape[0]):
         src_h, src_w, ratio_h, ratio_w = shape_list[batch_index]
         mask = segmentation[batch_index]
         boxes, scores = boxes_from_bitmap(
-            pred[batch_index], mask, src_w, src_h)
+            pred[batch_index], mask, src_w, src_h, detection_threshold, unclip_ratio, max_candidates, min_size)
         boxes_batch.append({'points': boxes})
-    return boxes_batch
+
+    parameters = {
+        "segmentation_threshold": segmentation_threshold,
+        "detection_threshold": detection_threshold,
+        "unclip_ratio": unclip_ratio,
+        "max_candidates": max_candidates,
+        "min_size": min_size
+    }
+
+    return boxes_batch, parameters
 
 
 def sorted_boxes(dt_boxes):

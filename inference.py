@@ -46,13 +46,14 @@ def bounding_box_to_xywh(box):
     }
 
 
-def predict(detection_model_path, recognition_model_path, image):
+def predict(detection_model_path, recognition_model_path, image, parameters={}):
     detection_result, shape_list = detect_text(image, detection_model_path)
 
     prediction = {}
     prediction['maps'] = detection_result[0]
 
-    post_result = postProcess(prediction, [shape_list])
+    post_result, parameters = postProcess(
+        prediction, [shape_list], **parameters)
 
     boxes = post_result[0]['points']
     boxes = filter_tag_det_res(boxes, image.shape)
@@ -119,10 +120,10 @@ def predict(detection_model_path, recognition_model_path, image):
             result[indices[beg_img_no + rno]]['text'] = recognition[rno][0]
             result[indices[beg_img_no + rno]]['accuracy'] = recognition[rno][1]
 
-    return result
+    return result, parameters
 
 
-def ocr(image, model_name, model_version='latest'):
+def ocr(image, model_name, model_version='latest', parameters={}):
     if model_name == 'PP-OCRv3':
         files, path = get_model(model_name, model_version)
         assert 'det_model.onnx' in files, 'det_model.onnx not found'
@@ -131,6 +132,6 @@ def ocr(image, model_name, model_version='latest'):
         detection_model_path = os.path.join(path, 'det_model.onnx')
         recognition_model_path = os.path.join(path, 'rec_model.onnx')
 
-        return predict(detection_model_path, recognition_model_path, image)
+        return predict(detection_model_path, recognition_model_path, image, parameters)
     else:
         raise ValueError("Unknown model name: {}".format(model_name))

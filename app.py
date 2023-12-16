@@ -71,7 +71,13 @@ def inference(request: OcrRequest):
     if (model_version == None):
         model_version = 'latest'
 
-    return ocr(image, model_name, model_version)
+    prediction, parameters = ocr(image, model_name, model_version)
+    return {
+        "model_name": model_name,
+        "model_version": model_version,
+        "parameters": parameters,
+        "prediction": prediction
+    }
 
 
 if __name__ == "__main__":
