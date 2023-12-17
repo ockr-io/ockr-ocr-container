@@ -26,31 +26,37 @@ OCKR_REGISTER_ON_STARTUP = os.getenv(
     "OCKR_REGISTER_ON_STARTUP", "true").lower() == "true"
 OCKR_API_URL = os.getenv("OCKR_API_URL", "http://localhost:8080/api/v1/")
 OCKR_CONTAINER_PORT = os.getenv('OCKR_CONTAINER_PORT', 5000)
+SUPPORTEDD_OCR_MODELS = ['PP-OCRv3']
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if OCKR_REGISTER_ON_STARTUP:
         url = socket.gethostbyname(socket.gethostname())
-        registered = False
+        registered = {}
 
-        try:
-            requests.post(OCKR_API_URL + "register", json={
-                          "name": "ockr-ocr-model", "url": url, "port": str(OCKR_CONTAINER_PORT)})
-            registered = True
-        except:
-            logging.error("Registration failed")
+        for model in SUPPORTEDD_OCR_MODELS:
+            registered[model] = False
+
+            try:
+                requests.post(OCKR_API_URL + "register", json={
+                              "name": model, "url": url, "port": str(OCKR_CONTAINER_PORT)})
+                registered[model] = True
+            except:
+                logging.error("Registration of {} failed: ".format(model))
 
         yield
-        if registered:
-            try:
-                requests.post(OCKR_API_URL + "deregister", json={
-                              "name": "ockr-ocr-model", "url": url, "port": str(OCKR_CONTAINER_PORT)})
-            except:
-                logging.error("De-registration failed")
-        else:
-            logging.info(
-                "No de-registration is required as the registration failed during startup")
+
+        for model in SUPPORTEDD_OCR_MODELS:
+            if registered[model]:
+                try:
+                    requests.post(OCKR_API_URL + "deregister", json={
+                                  "name": model, "url": url, "port": str(OCKR_CONTAINER_PORT)})
+                except:
+                    logging.error("De-registration failed: " + model)
+            else:
+                logging.info(
+                    "No de-registration for mode {} required, as the registration failed during startup".format(model))
 
 app = FastAPI(lifespan=lifespan)
 
