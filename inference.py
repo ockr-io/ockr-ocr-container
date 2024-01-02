@@ -19,7 +19,12 @@ def load_onnx_model(model_path):
 def detect_text(image, model_path):
     session, input_tensor = load_onnx_model(model_path)
 
-    image, shape_list = resize_image(image)
+    target_size = [512, 1024]
+    height, width = image.shape[:2]
+    if width < height:
+        target_size = [1024, 512]
+
+    image, shape_list = resize_image(image, target_size)
     image = image.astype(np.float32)
 
     image /= 255.0
@@ -125,13 +130,15 @@ def predict(detection_model_path, recognition_model_path, image, parameters={}):
 
 def ocr(image, model_name, model_version='latest', parameters={}):
     if model_name == 'PP-OCRv3':
-        files, path = get_model(model_name, model_version)
+        files, path, model_version = get_model(model_name, model_version)
         assert 'det_model.onnx' in files, 'det_model.onnx not found'
         assert 'rec_model.onnx' in files, 'rec_model.onnx not found'
 
         detection_model_path = os.path.join(path, 'det_model.onnx')
         recognition_model_path = os.path.join(path, 'rec_model.onnx')
 
-        return predict(detection_model_path, recognition_model_path, image, parameters)
+        result, parameters = predict(
+            detection_model_path, recognition_model_path, image, parameters)
+        return result, parameters, model_version
     else:
         raise ValueError("Unknown model name: {}".format(model_name))

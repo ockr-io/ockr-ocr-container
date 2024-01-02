@@ -24,9 +24,10 @@ logging.basicConfig(filename='ockr-ocr-app.log',
                     format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
 OCKR_REGISTER_ON_STARTUP = os.getenv(
     "OCKR_REGISTER_ON_STARTUP", "true").lower() == "true"
-OCKR_API_URL = os.getenv("OCKR_API_URL", "http://localhost:8080/api/v1/")
+OCKR_MODEL_API_URL = os.getenv(
+    "OCKR_API_URL", "http://localhost:9090/api/v1/model/")
 OCKR_CONTAINER_PORT = os.getenv('OCKR_CONTAINER_PORT', 5000)
-SUPPORTEDD_OCR_MODELS = ['PP-OCRv3']
+SUPPORTED_OCR_MODELS = ['PP-OCRv3']
 
 
 @asynccontextmanager
@@ -35,25 +36,27 @@ async def lifespan(app: FastAPI):
         url = socket.gethostbyname(socket.gethostname())
         registered = {}
 
-        for model in SUPPORTEDD_OCR_MODELS:
+        for model in SUPPORTED_OCR_MODELS:
             registered[model] = False
 
             try:
-                requests.post(OCKR_API_URL + "register", json={
+                requests.post(OCKR_MODEL_API_URL + "register", json={
                               "name": model, "url": url, "port": str(OCKR_CONTAINER_PORT)})
                 registered[model] = True
-            except:
-                logging.error("Registration of {} failed: ".format(model))
+            except Exception as exception:
+                logging.error(
+                    "Registration of {} failed: {}".format(model, exception))
 
         yield
 
-        for model in SUPPORTEDD_OCR_MODELS:
+        for model in SUPPORTED_OCR_MODELS:
             if registered[model]:
                 try:
-                    requests.post(OCKR_API_URL + "deregister", json={
+                    requests.post(OCKR_MODEL_API_URL + "deregister", json={
                                   "name": model, "url": url, "port": str(OCKR_CONTAINER_PORT)})
-                except:
-                    logging.error("De-registration failed: " + model)
+                except Exception as exception:
+                    logging.error(
+                        "De-registration of {} failed: {}".format(model, exception))
             else:
                 logging.info(
                     "No de-registration for mode {} required, as the registration failed during startup".format(model))
@@ -79,8 +82,10 @@ def inference(request: OcrRequest):
     if (ocr_model_version == None):
         ocr_model_version = 'latest'
 
-    prediction, parameters = ocr(
+    prediction, parameters, actual_model_version = ocr(
         image, ocr_model_name, ocr_model_version, parameters)
+
+    ocr_model_version = actual_model_version
     return {
         "ocr_model_name": ocr_model_name,
         "ocr_model_version": ocr_model_version,

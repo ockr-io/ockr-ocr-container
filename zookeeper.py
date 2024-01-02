@@ -19,7 +19,7 @@ def get_model(model_name, model_version='latest'):
         files = os.listdir(os.path.join('models', model_name, model_version))
         files = [filename for filename in files if not filename.endswith(
             '.md') and not filename.endswith('.txt')]
-        return files, os.path.join('models', model_name, model_version)
+        return files, os.path.join('models', model_name, model_version), model_version
 
     file_list = '{}v{}/{}/files.txt'.format(base_url,
                                             model_version, model_name)
@@ -38,4 +38,4 @@ def get_model(model_name, model_version='latest'):
 
         files.append(filename)
 
-    return files, os.path.join('models', model_name, model_version)
+    return files, os.path.join('models', model_name, model_version), model_version
