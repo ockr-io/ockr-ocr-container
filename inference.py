@@ -19,11 +19,7 @@ def load_onnx_model(model_path):
 def detect_text(image, model_path):
     session, input_tensor = load_onnx_model(model_path)
 
-    target_size = [512, 1024]
-    height, width = image.shape[:2]
-    if width < height:
-        target_size = [1024, 512]
-
+    target_size = 1024
     image, shape_list = resize_image(image, target_size)
     image = image.astype(np.float32)
 
