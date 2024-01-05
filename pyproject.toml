@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ockr-ocr-container"
-version = "0.1.1"
+version = "0.1.2"
 description = "The Ockr OCR container offers a service that can be used to extract information from documents"
 authors = ["Fabian Bormann <fabian.bormann@ockr.io>"]
 license = "MIT"
